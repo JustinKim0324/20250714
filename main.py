@@ -129,17 +129,69 @@ def load_and_process_data(uploaded_file=None):
             if df is None:
                 raise ValueError("파일을 찾을 수 없거나 모든 인코딩 시도 실패")
         
-        # 컬럼명 정리
-        df.columns = ['날짜', 'K200지수', '야간선물_외국인', '정규장_외국인_선물', '정규장_외국인_현물']
+        # 디버깅용: 원본 데이터 확인
+        st.write("**원본 데이터 확인:**")
+        st.write(f"데이터 형태: {df.shape}")
+        st.write("첫 3행:")
+        st.dataframe(df.head(3))
+        st.write("컬럼명:", df.columns.tolist())
         
-        # 날짜 변환
-        df['날짜'] = pd.to_datetime(df['날짜'])
-        df = df.sort_values('날짜').reset_index(drop=True)
+        # 컬럼명 정리 (첫 번째 행이 헤더인지 확인)
+        if df.iloc[0, 0] in ['단위', 'UNIT', '구분'] or '단위' in str(df.iloc[0, 0]):
+            # 첫 번째 행이 단위 정보인 경우 제거
+            df = df.drop(df.index[0]).reset_index(drop=True)
         
-        # 숫자 컬럼 변환 (콤마 제거)
+        # 두 번째 행도 헤더 정보인지 확인
+        if df.iloc[0, 0] in ['', 'nan', 'NaN'] or pd.isna(df.iloc[0, 0]):
+            df = df.drop(df.index[0]).reset_index(drop=True)
+        
+        # 컬럼명 설정
+        expected_columns = ['날짜', 'K200지수', '야간선물_외국인', '정규장_외국인_선물', '정규장_외국인_현물']
+        if len(df.columns) >= 5:
+            df.columns = expected_columns[:len(df.columns)]
+        else:
+            raise ValueError(f"예상 컬럼 수(5개)와 실제 컬럼 수({len(df.columns)})가 다릅니다.")
+        
+        # 빈 행 제거
+        df = df.dropna(subset=['날짜']).reset_index(drop=True)
+        
+        # 날짜 컬럼 처리
+        try:
+            # 날짜 형식 확인 및 변환
+            df['날짜'] = pd.to_datetime(df['날짜'], errors='coerce')
+            
+            # 날짜 변환에 실패한 행 제거
+            df = df.dropna(subset=['날짜']).reset_index(drop=True)
+            
+            if len(df) == 0:
+                raise ValueError("유효한 날짜 데이터가 없습니다.")
+                
+        except Exception as e:
+            st.error(f"날짜 처리 중 오류: {str(e)}")
+            st.info("날짜 컬럼의 첫 몇 개 값:")
+            st.write(df['날짜'].head())
+            raise
+        # 숫자 컬럼 변환 (콤마 제거 및 숫자 변환)
         numeric_cols = ['K200지수', '야간선물_외국인', '정규장_외국인_선물', '정규장_외국인_현물']
+        
         for col in numeric_cols:
-            df[col] = df[col].astype(str).str.replace(',', '').astype(float)
+            if col in df.columns:
+                try:
+                    # 문자열로 변환 후 콤마 제거
+                    df[col] = df[col].astype(str).str.replace(',', '').str.replace('"', '')
+                    # 숫자 변환 (변환 실패 시 NaN)
+                    df[col] = pd.to_numeric(df[col], errors='coerce')
+                except Exception as e:
+                    st.warning(f"{col} 컬럼 변환 중 오류: {str(e)}")
+        
+        # NaN 값이 있는 행 제거
+        df = df.dropna().reset_index(drop=True)
+        
+        if len(df) == 0:
+            raise ValueError("유효한 데이터가 없습니다.")
+            
+        # 데이터 정렬
+        df = df.sort_values('날짜').reset_index(drop=True)
         
         # 다음날 데이터 생성 (상관관계 분석용)
         df['다음날_K200지수'] = df['K200지수'].shift(-1)
@@ -156,6 +208,20 @@ def load_and_process_data(uploaded_file=None):
     
     except Exception as e:
         st.error(f"데이터 로드 중 오류 발생: {str(e)}")
+        
+        # 디버깅 정보 제공
+        if 'df' in locals() and df is not None:
+            st.write("**디버깅 정보:**")
+            st.write(f"데이터 형태: {df.shape}")
+            st.write("컬럼명:", df.columns.tolist())
+            st.write("첫 5행:")
+            st.dataframe(df.head())
+            
+            if len(df) > 0:
+                st.write("첫 번째 행의 각 컬럼 값:")
+                for i, col in enumerate(df.columns):
+                    st.write(f"- {col}: '{df.iloc[0, i]}'")
+        
         return None
 
 def calculate_correlation_analysis(df):
