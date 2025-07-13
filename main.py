@@ -92,11 +92,42 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 @st.cache_data
-def load_and_process_data():
+def load_and_process_data(uploaded_file=None):
     """데이터 로드 및 전처리"""
     try:
-        # CSV 파일 읽기
-        df = pd.read_csv('외국인 야간선물.csv', encoding='utf-8')
+        # 파일 업로드가 있는 경우
+        if uploaded_file is not None:
+            # 업로드된 파일 처리
+            encodings = ['cp949', 'euc-kr', 'utf-8', 'latin-1']
+            df = None
+            
+            for encoding in encodings:
+                try:
+                    uploaded_file.seek(0)  # 파일 포인터 리셋
+                    df = pd.read_csv(uploaded_file, encoding=encoding)
+                    st.success(f"업로드된 파일 로드 성공 (인코딩: {encoding})")
+                    break
+                except UnicodeDecodeError:
+                    continue
+            
+            if df is None:
+                raise ValueError("업로드된 파일의 모든 인코딩 시도 실패")
+        
+        else:
+            # 기본 파일 읽기 (다양한 인코딩 시도)
+            encodings = ['cp949', 'euc-kr', 'utf-8', 'latin-1']
+            df = None
+            
+            for encoding in encodings:
+                try:
+                    df = pd.read_csv('외국인 야간선물.csv', encoding=encoding)
+                    st.success(f"데이터 로드 성공 (인코딩: {encoding})")
+                    break
+                except (UnicodeDecodeError, FileNotFoundError):
+                    continue
+            
+            if df is None:
+                raise ValueError("파일을 찾을 수 없거나 모든 인코딩 시도 실패")
         
         # 컬럼명 정리
         df.columns = ['날짜', 'K200지수', '야간선물_외국인', '정규장_외국인_선물', '정규장_외국인_현물']
@@ -241,11 +272,39 @@ def main():
     # 메인 제목
     st.markdown('<h1 class="main-title">📊 외국인 야간선물 동향 분석</h1>', unsafe_allow_html=True)
     
+    # 파일 업로드 옵션
+    st.markdown('<h2 class="section-title">📁 데이터 파일 업로드</h2>', unsafe_allow_html=True)
+    uploaded_file = st.file_uploader(
+        "CSV 파일을 업로드하세요 (선택사항)", 
+        type=['csv'],
+        help="파일을 업로드하지 않으면 기본 파일을 사용합니다."
+    )
+    
     # 데이터 로드
-    df = load_and_process_data()
+    df = load_and_process_data(uploaded_file)
     if df is None:
-        st.error("데이터를 로드할 수 없습니다.")
+        st.error("데이터를 로드할 수 없습니다. 파일을 업로드하거나 기본 파일이 있는지 확인해주세요.")
+        st.info("💡 **해결 방법:**")
+        st.info("1. 위의 파일 업로더를 사용하여 CSV 파일을 업로드하세요.")
+        st.info("2. 또는 '외국인 야간선물.csv' 파일이 앱과 같은 폴더에 있는지 확인하세요.")
         return
+    
+    # 데이터 미리보기
+    with st.expander("📊 데이터 미리보기"):
+        col1, col2 = st.columns(2)
+        with col1:
+            st.write("**데이터 형태:**")
+            st.write(f"- 총 {len(df)}개 행")
+            st.write(f"- 기간: {df['날짜'].min().strftime('%Y-%m-%d')} ~ {df['날짜'].max().strftime('%Y-%m-%d')}")
+        
+        with col2:
+            st.write("**컬럼 정보:**")
+            st.write("- 날짜, K200지수, 야간선물_외국인")
+            st.write("- 정규장_외국인_선물, 정규장_외국인_현물")
+        
+        st.write("**최신 데이터 (상위 5개):**")
+        display_df = df[['날짜', 'K200지수', '야간선물_외국인', '정규장_외국인_선물', '정규장_외국인_현물']].head()
+        st.dataframe(display_df, use_container_width=True)
     
     # 사이드바
     st.sidebar.header("📋 분석 옵션")
