@@ -225,7 +225,7 @@ def load_and_process_data(uploaded_file=None):
         return None
 
 def calculate_correlation_analysis(df):
-    """상관관계 분석"""
+    """상관관계 분석 (나중에 사용)"""
     correlations = {}
     
     # 1. 야간선물 vs 다음날 정규장 선물
@@ -236,100 +236,100 @@ def calculate_correlation_analysis(df):
         'significance': '유의함' if p_value1 < 0.05 else '유의하지 않음'
     }
     
-    # 2. 야간선물 vs 다음날 정규장 현물
-    corr2, p_value2 = stats.pearsonr(df['야간선물_외국인'], df['다음날_정규장_외국인_현물'])
-    correlations['현물'] = {
-        'correlation': corr2,
-        'p_value': p_value2,
-        'significance': '유의함' if p_value2 < 0.05 else '유의하지 않음'
-    }
-    
-    # 3. 야간선물 vs 다음날 K200 지수 변화율
-    corr3, p_value3 = stats.pearsonr(df['야간선물_외국인'], df['K200_변화율'])
-    correlations['지수변화율'] = {
-        'correlation': corr3,
-        'p_value': p_value3,
-        'significance': '유의함' if p_value3 < 0.05 else '유의하지 않음'
-    }
-    
     return correlations
 
-def get_correlation_strength(corr_value):
-    """상관관계 강도 분류"""
-    abs_corr = abs(corr_value)
-    if abs_corr >= 0.7:
-        return "강한 상관관계", "correlation-strong"
-    elif abs_corr >= 0.3:
-        return "보통 상관관계", "correlation-moderate"
-    else:
-        return "약한 상관관계", "correlation-weak"
+def create_comparison_table(df):
+    """비교 표 생성"""
+    # 데이터 준비
+    table_data = []
+    for i in range(len(df)):
+        night_futures = df.iloc[i]['야간선물_외국인']
+        next_day_futures = df.iloc[i]['다음날_정규장_외국인_선물']
+        date = df.iloc[i]['날짜'].strftime('%Y-%m-%d')
+        
+        table_data.append({
+            '날짜': date,
+            '당일 야간선물 외국인': night_futures,
+            '다음날 정규장 외국인 선물': next_day_futures
+        })
+    
+    table_df = pd.DataFrame(table_data)
+    
+    # 스타일 적용 함수
+    def style_numbers(val):
+        if pd.isna(val):
+            return ''
+        if isinstance(val, (int, float)):
+            if val > 0:
+                return 'color: red; font-weight: bold;'
+            elif val < 0:
+                return 'color: blue; font-weight: bold;'
+        return ''
+    
+    # 테이블 스타일 적용
+    styled_df = table_df.style.applymap(
+        style_numbers, 
+        subset=['당일 야간선물 외국인', '다음날 정규장 외국인 선물']
+    ).format({
+        '당일 야간선물 외국인': '{:,.0f}',
+        '다음날 정규장 외국인 선물': '{:,.0f}'
+    })
+    
+    return styled_df
 
-def create_correlation_chart(df, x_col, y_col, title):
-    """상관관계 산점도 생성"""
-    fig = px.scatter(
-        df, 
-        x=x_col, 
-        y=y_col,
-        title=title,
-        trendline="ols",
-        color_discrete_sequence=['#FF6B6B']
-    )
+def create_histogram_chart(df):
+    """히스토그램 차트 생성"""
+    fig = go.Figure()
     
+    # 야간선물 데이터
+    night_colors = ['red' if x > 0 else 'blue' for x in df['야간선물_외국인']]
+    fig.add_trace(go.Bar(
+        x=df['날짜'],
+        y=df['야간선물_외국인'],
+        name='당일 야간선물 외국인',
+        marker_color=night_colors,
+        opacity=0.7,
+        yaxis='y'
+    ))
+    
+    # 다음날 정규장 선물 데이터
+    next_day_colors = ['red' if x > 0 else 'blue' for x in df['다음날_정규장_외국인_선물']]
+    fig.add_trace(go.Bar(
+        x=df['날짜'],
+        y=df['다음날_정규장_외국인_선물'],
+        name='다음날 정규장 외국인 선물',
+        marker_color=next_day_colors,
+        opacity=0.5,
+        yaxis='y2'
+    ))
+    
+    # 레이아웃 설정
     fig.update_layout(
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        title_font_size=16,
-        title_font_color='#2E86AB',
-        showlegend=False
-    )
-    
-    fig.update_traces(
-        marker=dict(size=8, opacity=0.7),
-        line=dict(color='#A23B72', width=2)
-    )
-    
-    return fig
-
-def create_time_series_chart(df):
-    """시계열 차트 생성"""
-    fig = make_subplots(
-        rows=2, cols=1,
-        subplot_titles=('K200 지수 추이', '외국인 야간선물 거래량'),
-        vertical_spacing=0.12
-    )
-    
-    # K200 지수 추이
-    fig.add_trace(
-        go.Scatter(
-            x=df['날짜'],
-            y=df['K200지수'],
-            name='K200 지수',
-            line=dict(color='#2E86AB', width=2),
-            fill='tonexty',
-            fillcolor='rgba(46, 134, 171, 0.1)'
+        title='당일 야간선물 vs 다음날 정규장 선물 비교',
+        xaxis_title='날짜',
+        yaxis=dict(
+            title='당일 야간선물 외국인',
+            side='left',
+            showgrid=True,
+            gridcolor='lightgray'
         ),
-        row=1, col=1
-    )
-    
-    # 외국인 야간선물 거래량
-    colors = ['#FF6B6B' if x < 0 else '#4ECDC4' for x in df['야간선물_외국인']]
-    fig.add_trace(
-        go.Bar(
-            x=df['날짜'],
-            y=df['야간선물_외국인'],
-            name='외국인 야간선물',
-            marker_color=colors,
-            opacity=0.7
+        yaxis2=dict(
+            title='다음날 정규장 외국인 선물',
+            side='right',
+            overlaying='y',
+            showgrid=False
         ),
-        row=2, col=1
-    )
-    
-    fig.update_layout(
-        height=600,
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        showlegend=False,
-        title_font_color='#2E86AB'
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        height=500,
+        showlegend=True,
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
+        )
     )
     
     return fig
@@ -338,44 +338,17 @@ def main():
     # 메인 제목
     st.markdown('<h1 class="main-title">📊 외국인 야간선물 동향 분석</h1>', unsafe_allow_html=True)
     
-    # 파일 업로드 옵션
-    st.markdown('<h2 class="section-title">📁 데이터 파일 업로드</h2>', unsafe_allow_html=True)
-    uploaded_file = st.file_uploader(
-        "CSV 파일을 업로드하세요 (선택사항)", 
-        type=['csv'],
-        help="파일을 업로드하지 않으면 기본 파일을 사용합니다."
-    )
+    # 파일 업로드 옵션 (간단하게)
+    uploaded_file = st.file_uploader("CSV 파일 업로드 (선택사항)", type=['csv'])
     
     # 데이터 로드
     df = load_and_process_data(uploaded_file)
     if df is None:
-        st.error("데이터를 로드할 수 없습니다. 파일을 업로드하거나 기본 파일이 있는지 확인해주세요.")
-        st.info("💡 **해결 방법:**")
-        st.info("1. 위의 파일 업로더를 사용하여 CSV 파일을 업로드하세요.")
-        st.info("2. 또는 '외국인 야간선물.csv' 파일이 앱과 같은 폴더에 있는지 확인하세요.")
+        st.error("데이터를 로드할 수 없습니다.")
         return
     
-    # 데이터 미리보기
-    with st.expander("📊 데이터 미리보기"):
-        col1, col2 = st.columns(2)
-        with col1:
-            st.write("**데이터 형태:**")
-            st.write(f"- 총 {len(df)}개 행")
-            st.write(f"- 기간: {df['날짜'].min().strftime('%Y-%m-%d')} ~ {df['날짜'].max().strftime('%Y-%m-%d')}")
-        
-        with col2:
-            st.write("**컬럼 정보:**")
-            st.write("- 날짜, K200지수, 야간선물_외국인")
-            st.write("- 정규장_외국인_선물, 정규장_외국인_현물")
-        
-        st.write("**최신 데이터 (상위 5개):**")
-        display_df = df[['날짜', 'K200지수', '야간선물_외국인', '정규장_외국인_선물', '정규장_외국인_현물']].head()
-        st.dataframe(display_df, use_container_width=True)
-    
-    # 사이드바
+    # 사이드바 (기간 선택)
     st.sidebar.header("📋 분석 옵션")
-    
-    # 기간 선택
     start_date = st.sidebar.date_input(
         "시작 날짜", 
         value=df['날짜'].min().date(),
@@ -393,156 +366,27 @@ def main():
     # 데이터 필터링
     filtered_df = df[(df['날짜'].dt.date >= start_date) & (df['날짜'].dt.date <= end_date)]
     
-    # 상관관계 분석
-    correlations = calculate_correlation_analysis(filtered_df)
+    # 첫 번째 컨텐츠: 야간선물과 다음날 정규장 선물 상관관계
+    st.markdown('<h2 class="section-title">당일 외국인 야간선물 동향과 다음날 정규장 외국인 선물의 상관관계</h2>', unsafe_allow_html=True)
     
-    # 메인 대시보드
-    st.markdown('<h2 class="section-title">🎯 주요 지표</h2>', unsafe_allow_html=True)
+    # 비교 표
+    st.markdown("### 📊 비교 표")
+    comparison_table = create_comparison_table(filtered_df)
+    st.dataframe(comparison_table, use_container_width=True, height=400)
     
-    col1, col2, col3, col4 = st.columns(4)
+    # 범례 설명
+    st.markdown("""
+    <div style="background-color: #f0f0f0; padding: 10px; border-radius: 5px; margin: 10px 0;">
+        <strong>📌 범례:</strong> 
+        <span style="color: red; font-weight: bold;">빨간색 = 순매수 (양수)</span>, 
+        <span style="color: blue; font-weight: bold;">파란색 = 순매도 (음수)</span>
+    </div>
+    """, unsafe_allow_html=True)
     
-    with col1:
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-value">{len(filtered_df)}</div>
-            <div class="metric-label">분석 기간 (일)</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col2:
-        avg_night_futures = filtered_df['야간선물_외국인'].mean()
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-value">{avg_night_futures:,.0f}</div>
-            <div class="metric-label">평균 야간선물 거래량</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col3:
-        avg_regular_futures = filtered_df['정규장_외국인_선물'].mean()
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-value">{avg_regular_futures:,.0f}</div>
-            <div class="metric-label">평균 정규장 선물 거래량</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col4:
-        avg_regular_spot = filtered_df['정규장_외국인_현물'].mean()
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-value">{avg_regular_spot:,.0f}</div>
-            <div class="metric-label">평균 정규장 현물 거래량</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    # 상관관계 분석 결과
-    st.markdown('<h2 class="section-title">📈 상관관계 분석 결과</h2>', unsafe_allow_html=True)
-    
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        corr_val = correlations['선물']['correlation']
-        strength, css_class = get_correlation_strength(corr_val)
-        st.markdown(f"""
-        <div class="correlation-box {css_class}">
-            <h4>야간선물 ↔ 다음날 정규장 선물</h4>
-            <h2>{corr_val:.3f}</h2>
-            <p>{strength}</p>
-            <p>유의성: {correlations['선물']['significance']}</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col2:
-        corr_val = correlations['현물']['correlation']
-        strength, css_class = get_correlation_strength(corr_val)
-        st.markdown(f"""
-        <div class="correlation-box {css_class}">
-            <h4>야간선물 ↔ 다음날 정규장 현물</h4>
-            <h2>{corr_val:.3f}</h2>
-            <p>{strength}</p>
-            <p>유의성: {correlations['현물']['significance']}</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col3:
-        corr_val = correlations['지수변화율']['correlation']
-        strength, css_class = get_correlation_strength(corr_val)
-        st.markdown(f"""
-        <div class="correlation-box {css_class}">
-            <h4>야간선물 ↔ 다음날 K200 변화율</h4>
-            <h2>{corr_val:.3f}</h2>
-            <p>{strength}</p>
-            <p>유의성: {correlations['지수변화율']['significance']}</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    # 시계열 차트
-    st.markdown('<h2 class="section-title">📊 시계열 추이</h2>', unsafe_allow_html=True)
-    time_series_chart = create_time_series_chart(filtered_df)
-    st.plotly_chart(time_series_chart, use_container_width=True)
-    
-    # 상관관계 산점도
-    st.markdown('<h2 class="section-title">🔍 상관관계 산점도</h2>', unsafe_allow_html=True)
-    
-    tab1, tab2, tab3 = st.tabs(["선물 상관관계", "현물 상관관계", "지수 변화율 상관관계"])
-    
-    with tab1:
-        chart1 = create_correlation_chart(
-            filtered_df, 
-            '야간선물_외국인', 
-            '다음날_정규장_외국인_선물',
-            '야간선물 vs 다음날 정규장 선물'
-        )
-        st.plotly_chart(chart1, use_container_width=True)
-    
-    with tab2:
-        chart2 = create_correlation_chart(
-            filtered_df, 
-            '야간선물_외국인', 
-            '다음날_정규장_외국인_현물',
-            '야간선물 vs 다음날 정규장 현물'
-        )
-        st.plotly_chart(chart2, use_container_width=True)
-    
-    with tab3:
-        chart3 = create_correlation_chart(
-            filtered_df, 
-            '야간선물_외국인', 
-            'K200_변화율',
-            '야간선물 vs 다음날 K200 변화율'
-        )
-        st.plotly_chart(chart3, use_container_width=True)
-    
-    # 인사이트
-    st.markdown('<h2 class="section-title">💡 주요 인사이트</h2>', unsafe_allow_html=True)
-    
-    insights = []
-    
-    # 가장 강한 상관관계 찾기
-    max_corr = max(correlations.values(), key=lambda x: abs(x['correlation']))
-    max_corr_name = [k for k, v in correlations.items() if v == max_corr][0]
-    
-    type_names = {'선물': '정규장 선물', '현물': '정규장 현물', '지수변화율': 'K200 지수 변화율'}
-    
-    insights.append(f"가장 강한 상관관계는 야간선물과 다음날 {type_names[max_corr_name]} 간의 관계로, 상관계수가 {max_corr['correlation']:.3f}입니다.")
-    
-    # 양수/음수 거래일 분석
-    positive_days = len(filtered_df[filtered_df['야간선물_외국인'] > 0])
-    negative_days = len(filtered_df[filtered_df['야간선물_외국인'] < 0])
-    
-    insights.append(f"분석 기간 중 외국인 야간선물 순매수일은 {positive_days}일, 순매도일은 {negative_days}일입니다.")
-    
-    # 평균 변화율
-    avg_change = filtered_df['K200_변화율'].mean()
-    insights.append(f"분석 기간 중 K200 지수의 평균 일일 변화율은 {avg_change:.2f}%입니다.")
-    
-    for insight in insights:
-        st.markdown(f"""
-        <div class="insight-box">
-            <p>{insight}</p>
-        </div>
-        """, unsafe_allow_html=True)
+    # 히스토그램
+    st.markdown("### 📈 날짜별 히스토그램")
+    histogram_chart = create_histogram_chart(filtered_df)
+    st.plotly_chart(histogram_chart, use_container_width=True)
 
 if __name__ == "__main__":
     main()
