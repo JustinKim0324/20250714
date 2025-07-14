@@ -70,7 +70,7 @@ st.markdown("""
     }
     
     .correlation-strong {
-        background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+        background: linear_gradient(135deg, #ff9a9e 0%, #fecfef 100%);
     }
     
     .correlation-moderate {
@@ -297,7 +297,7 @@ def main():
 
         if total_rows > 0:
             probability = (total_same_trend / total_rows) * 100
-            st.markdown("<br>") # 한 줄 띄우기
+            st.markdown("") # 한 줄 띄우기 (HTML <br> 대신 Streamlit의 빈 마크다운 사용)
             st.markdown(f"**당일 외국인 야간선물 동향이 다음날 정규장 외국인 선물과 같은 동향을 보일 확률은 현재의 범례 기준으로 {probability:+,.2f}%입니다.**")
             st.markdown(f"(※여기서 같은 동향이란 순매수일 경우 순매수, 순매도일 경우 순매도를 의미함)") # 글씨 진하게 해제
         else:
