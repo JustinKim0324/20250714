@@ -92,42 +92,23 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 @st.cache_data
-def load_and_process_data(uploaded_file=None):
-    """데이터 로드 및 전처리"""
+def load_and_process_data():
+    """데이터 로드 및 전처리 (로컬 파일에서 직접 로드)"""
     try:
-        # 파일 업로드가 있는 경우
-        if uploaded_file is not None:
-            # 업로드된 파일 처리
-            encodings = ['cp949', 'euc-kr', 'utf-8', 'latin-1']
-            df = None
-            
-            for encoding in encodings:
-                try:
-                    uploaded_file.seek(0)  # 파일 포인터 리셋
-                    df = pd.read_csv(uploaded_file, encoding=encoding)
-                    st.success(f"업로드된 파일 로드 성공 (인코딩: {encoding})")
-                    break
-                except UnicodeDecodeError:
-                    continue
-            
-            if df is None:
-                raise ValueError("업로드된 파일의 모든 인코딩 시도 실패")
+        # 기본 파일 읽기 (다양한 인코딩 시도)
+        encodings = ['cp949', 'euc-kr', 'utf-8', 'latin-1']
+        df = None
         
-        else:
-            # 기본 파일 읽기 (다양한 인코딩 시도)
-            encodings = ['cp949', 'euc-kr', 'utf-8', 'latin-1']
-            df = None
-            
-            for encoding in encodings:
-                try:
-                    df = pd.read_csv('외국인 야간선물.csv', encoding=encoding)
-                    st.success(f"데이터 로드 성공 (인코딩: {encoding})")
-                    break
-                except (UnicodeDecodeError, FileNotFoundError):
-                    continue
-            
-            if df is None:
-                raise ValueError("파일을 찾을 수 없거나 모든 인코딩 시도 실패")
+        for encoding in encodings:
+            try:
+                df = pd.read_csv('외국인 야간선물.csv', encoding=encoding)
+                st.success(f"데이터 로드 성공 (인코딩: {encoding})")
+                break
+            except (UnicodeDecodeError, FileNotFoundError):
+                continue
+        
+        if df is None:
+            raise ValueError("파일을 찾을 수 없거나 모든 인코딩 시도 실패")
         
         # 디버깅용: 원본 데이터 확인
         st.write("**원본 데이터 확인:**")
@@ -338,13 +319,10 @@ def main():
     # 메인 제목
     st.markdown('<h1 class="main-title">📊 외국인 야간선물 동향 분석</h1>', unsafe_allow_html=True)
     
-    # 파일 업로드 옵션 (간단하게)
-    uploaded_file = st.file_uploader("CSV 파일 업로드 (선택사항)", type=['csv'])
-    
-    # 데이터 로드
-    df = load_and_process_data(uploaded_file)
+    # 데이터 로드 (파일 업로드 없이 로컬에서 직접 로드)
+    df = load_and_process_data()
     if df is None:
-        st.error("데이터를 로드할 수 없습니다.")
+        st.error("데이터를 로드할 수 없습니다. '외국인 야간선물.csv' 파일이 스크립트와 같은 디렉토리에 있는지 확인해주세요.")
         return
     
     # 사이드바 (기간 선택)
