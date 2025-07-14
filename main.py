@@ -295,7 +295,7 @@ def create_comparison_table_k200(df):
             '날짜(D-Day 기준일)': date,
             '당일(D-Day) 야간선물 외국인': night_futures,
             '다음날(D+1 Day) KOSPI200 지수': next_day_k200_index,
-            '다음날(D+1 Day) KOSPI200 상승률': next_day_k200_change_rate
+            '상승률': next_day_k200_change_rate # '상승률'로 컬럼명 변경
         })
     
     # 최신 날짜가 가장 위에 오도록 정렬
@@ -311,7 +311,7 @@ def create_comparison_table_k200(df):
                     return 'color: red; font-weight: bold;'
                 elif val < 0:
                     return 'color: blue; font-weight: bold;'
-            elif col_name == '다음날(D+1 Day) KOSPI200 상승률':
+            elif col_name == '상승률': # 변경된 컬럼명 반영
                 if val > 0:
                     return 'color: red; font-weight: bold;'
                 elif val < 0:
@@ -322,11 +322,11 @@ def create_comparison_table_k200(df):
     styled_df = table_df.style.apply(
         lambda x: [style_numbers_k200(v, k) for k, v in x.items()],
         axis=1,
-        subset=['당일(D-Day) 야간선물 외국인', '다음날(D+1 Day) KOSPI200 상승률']
+        subset=['당일(D-Day) 야간선물 외국인', '상승률'] # 변경된 컬럼명 반영
     ).format({
         '당일(D-Day) 야간선물 외국인': '{:+,.0f}',
         '다음날(D+1 Day) KOSPI200 지수': '{:,.2f}', # 지수는 부호 없이 소수점 2자리
-        '다음날(D+1 Day) KOSPI200 상승률': '{:+,.2f}%' # 상승률은 부호와 % 표시
+        '상승률': '{:+,.2f}%' # 상승률은 부호와 % 표시
     })
     
     return styled_df
