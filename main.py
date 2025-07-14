@@ -313,7 +313,7 @@ def main():
     filtered_df = df[(df['날짜'].dt.date >= start_date) & (df['날짜'].dt.date <= end_date)]
     
     # 첫 번째 컨텐츠: 야간선물과 다음날 정규장 선물 상관관계
-    st.markdown('<h2 class="section-title">당일 외국인 야간선물 동향과 다음날 정규장 외국인 선물의 상관관계</h2>', unsafe_allow_html=True)
+    st.markdown('<h2 class="section-title">1. 당일 외국인 야간선물 동향과 다음날 정규장 외국인 선물의 상관관계</h2>', unsafe_allow_html=True)
     
     # 비교 표
     st.markdown("### 📊 비교 표")
@@ -370,7 +370,7 @@ def main():
             probability_spot = (total_same_trend_spot / total_rows) * 100
             st.markdown("") # 한 줄 띄우기
             st.markdown(f"**당일 외국인 야간선물 동향이 다음날 정규장 외국인 현물과 같은 방향성을 보일 확률은 현재의 범례 기준으로 {probability_spot:+,.2f}%입니다.**")
-            st.markdown(f"(※단위는 '계약' 기준이며 여기서 같은 방향성이란 순매수일 경우 순매수, 순매도일 경우 순매도를 의미함)")
+            st.markdown(f"(※단위는 선물은 '계약' 기준이며, 현물은 '억" 기준임. 여기서 같은 방향성이란 순매수일 경우 순매수, 순매도일 경우 순매도를 의미함)")
         else:
             st.info("선택된 기간에 유효한 데이터가 없습니다. 확률을 계산할 수 없습니다.")
     else:
