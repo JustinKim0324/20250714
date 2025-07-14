@@ -439,7 +439,7 @@ def main():
     # 같은 동향을 보일 확률 계산 (현물)
     if not filtered_df.empty:
         # 순매수일 때 순매수 (양수)
-        same_trend_positive_spot = 외((filtered_df['야간선물_외국인'] > 0) & 
+        same_trend_positive_spot = ((filtered_df['야간선물_외국인'] > 0) & 
                                (filtered_df['다음날_정규장_외국인_현물'] > 0)).sum()
         
         # 순매도일 때 순매도 (음수)
