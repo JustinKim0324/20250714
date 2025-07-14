@@ -281,6 +281,27 @@ def main():
     st.markdown("### 📊 비교 표")
     comparison_table = create_comparison_table(filtered_df)
     st.dataframe(comparison_table, use_container_width=True, height=400)
+
+    # 같은 동향을 보일 확률 계산
+    if not filtered_df.empty:
+        # 순매수일 때 순매수 (양수)
+        same_trend_positive = ((filtered_df['야간선물_외국인'] > 0) & 
+                               (filtered_df['다음날_정규장_외국인_선물'] > 0)).sum()
+        
+        # 순매도일 때 순매도 (음수)
+        same_trend_negative = ((filtered_df['야간선물_외국인'] < 0) & 
+                               (filtered_df['다음날_정규장_외국인_선물'] < 0)).sum()
+        
+        total_same_trend = same_trend_positive + same_trend_negative
+        total_rows = len(filtered_df)
+
+        if total_rows > 0:
+            probability = (total_same_trend / total_rows) * 100
+            st.markdown(f"**당일 외국인 야간선물 동향이 다음날 정규장 외국인 선물과 같은 동향을 보일 확률은 현재의 범례 기준으로 {probability:.2f}%입니다.**")
+        else:
+            st.info("선택된 기간에 유효한 데이터가 없습니다. 확률을 계산할 수 없습니다.")
+    else:
+        st.info("선택된 기간에 유효한 데이터가 없습니다. 확률을 계산할 수 없습니다.")
     
 if __name__ == "__main__":
     main()
