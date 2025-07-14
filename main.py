@@ -102,20 +102,13 @@ def load_and_process_data():
         for encoding in encodings:
             try:
                 df = pd.read_csv('외국인 야간선물.csv', encoding=encoding)
-                st.success(f"데이터 로드 성공 (인코딩: {encoding})")
+                # st.success(f"데이터 로드 성공 (인코딩: {encoding})") # 성공 메시지 제거
                 break
             except (UnicodeDecodeError, FileNotFoundError):
                 continue
         
         if df is None:
             raise ValueError("파일을 찾을 수 없거나 모든 인코딩 시도 실패")
-        
-        # 디버깅용: 원본 데이터 확인
-        st.write("**원본 데이터 확인:**")
-        st.write(f"데이터 형태: {df.shape}")
-        st.write("첫 3행:")
-        st.dataframe(df.head(3))
-        st.write("컬럼명:", df.columns.tolist())
         
         # 컬럼명 정리 (첫 번째 행이 헤더인지 확인)
         if df.iloc[0, 0] in ['단위', 'UNIT', '구분'] or '단위' in str(df.iloc[0, 0]):
@@ -190,18 +183,18 @@ def load_and_process_data():
     except Exception as e:
         st.error(f"데이터 로드 중 오류 발생: {str(e)}")
         
-        # 디버깅 정보 제공
-        if 'df' in locals() and df is not None:
-            st.write("**디버깅 정보:**")
-            st.write(f"데이터 형태: {df.shape}")
-            st.write("컬럼명:", df.columns.tolist())
-            st.write("첫 5행:")
-            st.dataframe(df.head())
-            
-            if len(df) > 0:
-                st.write("첫 번째 행의 각 컬럼 값:")
-                for i, col in enumerate(df.columns):
-                    st.write(f"- {col}: '{df.iloc[0, i]}'")
+        # 디버깅 정보 제거
+        # if 'df' in locals() and df is not None:
+        #     st.write("**디버깅 정보:**")
+        #     st.write(f"데이터 형태: {df.shape}")
+        #     st.write("컬럼명:", df.columns.tolist())
+        #     st.write("첫 5행:")
+        #     st.dataframe(df.head())
+        #     
+        #     if len(df) > 0:
+        #         st.write("첫 번째 행의 각 컬럼 값:")
+        #         for i, col in enumerate(df.columns):
+        #             st.write(f"- {col}: '{df.iloc[0, i]}'")
         
         return None
 
