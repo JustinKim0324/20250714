@@ -102,7 +102,6 @@ def load_and_process_data():
         for encoding in encodings:
             try:
                 df = pd.read_csv('외국인 야간선물.csv', encoding=encoding)
-                # st.success(f"데이터 로드 성공 (인코딩: {encoding})") # 성공 메시지 제거
                 break
             except (UnicodeDecodeError, FileNotFoundError):
                 continue
@@ -182,20 +181,6 @@ def load_and_process_data():
     
     except Exception as e:
         st.error(f"데이터 로드 중 오류 발생: {str(e)}")
-        
-        # 디버깅 정보 제거
-        # if 'df' in locals() and df is not None:
-        #     st.write("**디버깅 정보:**")
-        #     st.write(f"데이터 형태: {df.shape}")
-        #     st.write("컬럼명:", df.columns.tolist())
-        #     st.write("첫 5행:")
-        #     st.dataframe(df.head())
-        #     
-        #     if len(df) > 0:
-        #         st.write("첫 번째 행의 각 컬럼 값:")
-        #         for i, col in enumerate(df.columns):
-        #             st.write(f"- {col}: '{df.iloc[0, i]}'")
-        
         return None
 
 def calculate_correlation_analysis(df):
@@ -222,12 +207,13 @@ def create_comparison_table(df):
         date = df.iloc[i]['날짜'].strftime('%Y-%m-%d')
         
         table_data.append({
-            '날짜': date,
-            '당일 야간선물 외국인': night_futures,
-            '다음날 정규장 외국인 선물': next_day_futures
+            '날짜(D-Day 기준일)': date,
+            '당일(D-Day) 야간선물 외국인': night_futures,
+            '다음날(D+1 Day) 정규장 외국인 선물': next_day_futures
         })
     
-    table_df = pd.DataFrame(table_data)
+    # 최신 날짜가 가장 위에 오도록 정렬
+    table_df = pd.DataFrame(table_data).sort_values('날짜(D-Day 기준일)', ascending=False)
     
     # 스타일 적용 함수
     def style_numbers(val):
@@ -243,10 +229,10 @@ def create_comparison_table(df):
     # 테이블 스타일 적용
     styled_df = table_df.style.applymap(
         style_numbers, 
-        subset=['당일 야간선물 외국인', '다음날 정규장 외국인 선물']
+        subset=['당일(D-Day) 야간선물 외국인', '다음날(D+1 Day) 정규장 외국인 선물']
     ).format({
-        '당일 야간선물 외국인': '{:,.0f}',
-        '다음날 정규장 외국인 선물': '{:,.0f}'
+        '당일(D-Day) 야간선물 외국인': '{:+,.0f}', # 양수 부호 표시
+        '다음날(D+1 Day) 정규장 외국인 선물': '{:+,.0f}' # 양수 부호 표시
     })
     
     return styled_df
