@@ -88,6 +88,13 @@ st.markdown("""
         margin: 1rem 0;
         border-radius: 0 8px 8px 0;
     }
+    
+    /* 테이블 헤더 스타일 */
+    .stDataFrame thead th {
+        color: black !important; /* 글자색을 검정색으로 */
+        font-weight: bolder !important; /* 더 굵게 */
+        text-align: center !important; /* 가운데 정렬 */
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -237,63 +244,6 @@ def create_comparison_table(df):
     
     return styled_df
 
-# create_histogram_chart 함수는 더 이상 사용되지 않으므로 제거합니다.
-# def create_histogram_chart(df):
-#     """히스토그램 차트 생성"""
-#     fig = go.Figure()
-    
-#     # 야간선물 데이터
-#     night_colors = ['red' if x > 0 else 'blue' for x in df['야간선물_외국인']]
-#     fig.add_trace(go.Bar(
-#         x=df['날짜'],
-#         y=df['야간선물_외국인'],
-#         name='당일 야간선물 외국인',
-#         marker_color=night_colors,
-#         opacity=0.7,
-#         yaxis='y'
-#     ))
-    
-#     # 다음날 정규장 선물 데이터
-#     next_day_colors = ['red' if x > 0 else 'blue' for x in df['다음날_정규장_외국인_선물']]
-#     fig.add_trace(go.Bar(
-#         x=df['날짜'],
-#         y=df['다음날_정규장_외국인_선물'],
-#         name='다음날 정규장 외국인 선물',
-#         marker_color=next_day_colors,
-#         opacity=0.5,
-#         yaxis='y2'
-#     ))
-    
-#     # 레이아웃 설정
-#     fig.update_layout(
-#         title='당일 야간선물 vs 다음날 정규장 선물 비교',
-#         xaxis_title='날짜',
-#         yaxis=dict(
-#             title='당일 야간선물 외국인',
-#             side='left',
-#             showgrid=True,
-#             gridcolor='lightgray'
-#         ),
-#         yaxis2=dict(
-#             title='다음날 정규장 외국인 선물',
-#             side='right',
-#             overlaying='y',
-#             showgrid=False
-#         ),
-#         plot_bgcolor='white',
-#         paper_bgcolor='white',
-#         height=500,
-#         showlegend=True,
-#         legend=dict(
-#             orientation="h",
-#             yanchor="bottom",
-#             y=1.02,
-#             xanchor="right",
-#             x=1
-#         )
-#     )
-    
-#     return fig
 
 def main():
     # 메인 제목
@@ -332,19 +282,5 @@ def main():
     comparison_table = create_comparison_table(filtered_df)
     st.dataframe(comparison_table, use_container_width=True, height=400)
     
-    # 범례 설명 제거
-    # st.markdown("""
-    # <div style="background-color: #f0f0f0; padding: 10px; border-radius: 5px; margin: 10px 0;">
-    #     <strong>📌 범례:</strong> 
-    #     <span style="color: red; font-weight: bold;">빨간색 = 순매수 (양수)</span>, 
-    #     <span style="color: blue; font-weight: bold;">파란색 = 순매도 (음수)</span>
-    # </div>
-    # """, unsafe_allow_html=True)
-    
-    # 히스토그램 제거
-    # st.markdown("### 📈 날짜별 히스토그램")
-    # histogram_chart = create_histogram_chart(filtered_df)
-    # st.plotly_chart(histogram_chart, use_container_width=True)
-
 if __name__ == "__main__":
     main()
