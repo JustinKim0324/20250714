@@ -244,14 +244,16 @@ def create_comparison_table_futures(df):
                 return 'color: blue; font-weight: bold;'
         return ''
     
-    # 테이블 스타일 적용
+    # 테이블 스타일 적용 및 모든 셀 가운데 정렬
     styled_df = table_df.style.applymap(
         style_numbers, 
         subset=['당일(D-Day) 야간선물 외국인', '다음날(D+1 Day) 정규장 외국인 선물']
     ).format({
         '당일(D-Day) 야간선물 외국인': '{:+,.0f}', # 양수 부호 표시
         '다음날(D+1 Day) 정규장 외국인 선물': '{:+,.0f}' # 양수 부호 표시
-    })
+    }).set_properties(
+        **{'text-align': 'center'} # 모든 셀을 가운데 정렬
+    )
     
     return styled_df
 
@@ -283,14 +285,16 @@ def create_comparison_table_spot(df):
                 return 'color: blue; font-weight: bold;'
         return ''
     
-    # 테이블 스타일 적용
+    # 테이블 스타일 적용 및 모든 셀 가운데 정렬
     styled_df = table_df.style.applymap(
         style_numbers, 
         subset=['당일(D-Day) 야간선물 외국인', '다음날(D+1 Day) 정규장 외국인 현물'] # 현물 컬럼명으로 변경
     ).format({
         '당일(D-Day) 야간선물 외국인': '{:+,.0f}', # 양수 부호 표시
         '다음날(D+1 Day) 정규장 외국인 현물': '{:+,.0f}' # 양수 부호 표시
-    })
+    }).set_properties(
+        **{'text-align': 'center'} # 모든 셀을 가운데 정렬
+    )
     
     return styled_df
 
@@ -341,8 +345,8 @@ def create_comparison_table_k200(df):
         html_string += f"""
             <tr>
                 <td style="text-align: center; padding: 8px; border: 1px solid #ddd;">{date}</td>
-                <td style="text-align: right; padding: 8px; border: 1px solid #ddd; {futures_style}">{futures_formatted}</td>
-                <td style="text-align: right; padding: 8px; border: 1px solid #ddd;">{k200_display}</td>
+                <td style="text-align: center; padding: 8px; border: 1px solid #ddd; {futures_style}">{futures_formatted}</td>
+                <td style="text-align: center; padding: 8px; border: 1px solid #ddd;">{k200_display}</td>
             </tr>
         """
     html_string += """
@@ -446,27 +450,6 @@ def main():
         st.info("선택된 기간에 유효한 데이터가 없습니다. 확률을 계산할 수 없습니다.")
 
     # 세 번째 컨텐츠 섹션은 사용자 요청에 따라 제거됨
-    # st.markdown("---") # 섹션 구분선
-    # st.markdown('<h2 class="section-title">3. 당일 외국인 야간선물 동향과 다음날 KOSPI200 지수 상승률의 상관관계</h2>', unsafe_allow_html=True)
-    # st.markdown("### 📊 비교 표")
-    # comparison_table_k200_html = create_comparison_table_k200(filtered_df) 
-    # st.write(comparison_table_k200_html, unsafe_allow_html=True)
-    # if not filtered_df.empty:
-    #     same_trend_positive_k200 = ((filtered_df['야간선물_외국인'] > 0) & 
-    #                            (filtered_df['K200_변화율'] > 0)).sum()
-    #     same_trend_negative_k200 = ((filtered_df['야간선물_외국인'] < 0) & 
-    #                            (filtered_df['K200_변화율'] < 0)).sum()
-    #     total_same_trend_k200 = same_trend_positive_k200 + same_trend_negative_k200
-    #     total_rows = len(filtered_df)
-    #     if total_rows > 0:
-    #         probability_k200 = (total_same_trend_k200 / total_rows) * 100
-    #         st.markdown("")
-    #         st.markdown(f"**당일 외국인 야간선물 동향이 다음날 KOSPI200 지수 상승률과 같은 방향성을 보일 확률은 현재의 범례 기준으로 {probability_k200:+,.2f}%입니다.**")
-    #         st.markdown(f"(※단위는 선물은 '계약', KOSPI200 지수 상승률은 '%' 기준이며, 여기서 같은 방향성이란 순매수일 경우 상승, 순매도일 경우 하락을 의미함)")
-    #     else:
-    #         st.info("선택된 기간에 유효한 데이터가 없습니다. 확률을 계산할 수 없습니다.")
-    # else:
-    #     st.info("선택된 기간에 유효한 데이터가 없습니다. 확률을 계산할 수 없습니다.")
     
 if __name__ == "__main__":
     main()
