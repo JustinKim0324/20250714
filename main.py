@@ -275,7 +275,7 @@ def main():
     filtered_df = df[(df['날짜'].dt.date >= start_date) & (df['날짜'].dt.date <= end_date)]
     
     # 첫 번째 컨텐츠: 야간선물과 다음날 정규장 선물 상관관계
-    st.markdown('<h2 class="section-title">당일 외국인 야간선물 동향과 다음날 정규장 외국인 선물의 상관관계</h2>', unsafe_allow_html=True)
+    st.markdown('<h2 class="section-title">1. 당일 외국인 야간선물 동향과 다음날 정규장 외국인 선물의 상관관계</h2>', unsafe_allow_html=True)
     
     # 비교 표
     st.markdown("### 📊 비교 표")
