@@ -1,3 +1,5 @@
+
+Gemini와의 대화
 import streamlit as st
 
 import pandas as pd
