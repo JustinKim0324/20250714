@@ -98,8 +98,7 @@ st.markdown("""
 
     /* st.dataframe으로 생성된 테이블의 데이터 셀 스타일 (첫 두 테이블) */
     .stDataFrame tbody td {
-        /* 기본적으로 가운데 정렬을 유지하되, style.set_properties로 오버라이드 가능 */
-        text-align: center; 
+        text-align: center; /* 데이터 셀은 가운데 정렬 유지 */
     }
     /* to_html로 생성되는 테이블 (세 번째 테이블)의 데이터 셀은 pandas styler에서 직접 정렬 */
 </style>
@@ -248,12 +247,6 @@ def create_comparison_table_futures(df):
         '다음날(D+1 Day) 정규장 외국인 선물': '{:+,.0f}' # 양수 부호 표시
     })
     
-    # 숫자 컬럼들을 오른쪽 정렬
-    styled_df = styled_df.set_properties(
-        **{'text-align': 'right'},
-        subset=['당일(D-Day) 야간선물 외국인', '다음날(D+1 Day) 정규장 외국인 선물']
-    )
-    
     return styled_df
 
 def create_comparison_table_spot(df):
@@ -292,12 +285,6 @@ def create_comparison_table_spot(df):
         '당일(D-Day) 야간선물 외국인': '{:+,.0f}', # 양수 부호 표시
         '다음날(D+1 Day) 정규장 외국인 현물': '{:+,.0f}' # 양수 부호 표시
     })
-
-    # 숫자 컬럼들을 오른쪽 정렬
-    styled_df = styled_df.set_properties(
-        **{'text-align': 'right'},
-        subset=['당일(D-Day) 야간선물 외국인', '다음날(D+1 Day) 정규장 외국인 현물']
-    )
     
     return styled_df
 
@@ -351,8 +338,6 @@ def create_comparison_table_k200(df):
     })
 
     # 숫자 컬럼들을 오른쪽 정렬
-    # '다음날(D+1 Day) KOSPI200 지수' 컬럼은 이미 HTML 문자열이므로,
-    # 해당 셀 전체의 정렬을 right로 설정하면 됨.
     styled_df = styled_df.set_properties(
         **{'text-align': 'right'},
         subset=['당일(D-Day) 야간선물 외국인', '다음날(D+1 Day) KOSPI200 지수']
@@ -489,8 +474,6 @@ def main():
             st.markdown("") # 한 줄 띄우기
             st.markdown(f"**당일 외국인 야간선물 동향이 다음날 KOSPI200 지수 상승률과 같은 방향성을 보일 확률은 현재의 범례 기준으로 {probability_k200:+,.2f}%입니다.**")
             st.markdown(f"(※단위는 선물은 '계약', KOSPI200 지수 상승률은 '%' 기준이며, 여기서 같은 방향성이란 순매수일 경우 상승, 순매도일 경우 하락을 의미함)")
-            st.markdown("") # 추가 공백
-            st.markdown("<!-- 여기에 코멘트를 추가하세요 -->") # 코멘트 표시
         else:
             st.info("선택된 기간에 유효한 데이터가 없습니다. 확률을 계산할 수 없습니다.")
     else:
