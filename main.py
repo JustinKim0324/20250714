@@ -14,9 +14,20 @@ warnings.filterwarnings('ignore')
 st.set_page_config(
     page_title="외국인 야간선물 동향 분석",
     page_icon="📊",
-    layout="centered", # 'wide'에서 'centered'로 변경
+    layout="centered",
     initial_sidebar_state="expanded"
 )
+
+# CSS로 메인 컨테이너 너비 조정
+st.markdown("""
+<style>
+.main .block-container {
+    max-width: 1200px;  # 원하는 너비로 조정 (기본값: 730px)
+    padding-left: 2rem;
+    padding-right: 2rem;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # 커스텀 CSS
 st.markdown("""
