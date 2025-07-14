@@ -297,7 +297,7 @@ def main():
 
         if total_rows > 0:
             probability = (total_same_trend / total_rows) * 100
-            st.markdown(f"**당일 외국인 야간선물 동향이 다음날 정규장 외국인 선물과 같은 동향을 보일 확률은 현재의 범례 기준으로 {probability:.2f}%입니다.**")
+            st.markdown(f"**당일 외국인 야간선물 동향이 다음날 정규장 외국인 선물과 같은 동향을 보일 확률은 현재의 범례 기준으로 {probability:+,.2f}%입니다.** (※여기서 같은 동향이란 순매수일 경우 순매수, 순매도일 경우 순매도를 의미함을 뜻함)")
         else:
             st.info("선택된 기간에 유효한 데이터가 없습니다. 확률을 계산할 수 없습니다.")
     else:
