@@ -18,7 +18,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 커스텀 CSS
+# 커스텀 CSS (테이블 헤더 스타일을 모든 DataFrame에 적용)
 st.markdown("""
 <style>
     .main-title {
@@ -43,7 +43,7 @@ st.markdown("""
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         padding: 1.5rem;
         border-radius: 10px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        box_shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         text-align: center;
         margin: 1rem 0;
     }
@@ -89,11 +89,21 @@ st.markdown("""
         border-radius: 0 8px 8px 0;
     }
     
-    /* 테이블 헤더 스타일 */
+    /* 기존 stDataFrame 스타일 (st.dataframe에만 적용됨) */
     .stDataFrame thead th {
-        color: black !important; /* 글자색을 검정색으로 */
-        font-weight: bolder !important; /* 더 굵게 */
-        text-align: center !important; /* 가운데 정렬 */
+        color: black !important; 
+        font-weight: bolder !important; 
+        text-align: center !important;
+    }
+    
+    /* to_html로 생성되는 테이블에 대한 스타일 추가 (k200 테이블용) */
+    .dataframe th {
+        color: black !important;
+        font-weight: bolder !important;
+        text-align: center !important;
+    }
+    .dataframe td {
+        text-align: center; /* 데이터 셀도 가운데 정렬 */
     }
 </style>
 """, unsafe_allow_html=True)
@@ -282,8 +292,9 @@ def create_comparison_table_spot(df):
     
     return styled_df
 
+
 def create_comparison_table_k200(df):
-    """KOSPI200 지수 상승률 비교 표 생성"""
+    """KOSPI200 지수 상승률 비교 표 생성 및 HTML 반환"""
     table_data = []
     for i in range(len(df)):
         night_futures = df.iloc[i]['야간선물_외국인']
@@ -291,14 +302,18 @@ def create_comparison_table_k200(df):
         next_day_k200_change_rate = df.iloc[i]['K200_변화율']
         date = df.iloc[i]['날짜'].strftime('%Y-%m-%d')
         
-        # KOSPI200 지수 및 상승률을 하나의 셀로 결합
-        k200_display = f"{next_day_k200_index:,.2f} "
-        if next_day_k200_change_rate > 0:
-            k200_display += f"<span style='color:red; font-weight:bold;'>({next_day_k200_change_rate:+.2f}%)</span>"
-        elif next_day_k200_change_rate < 0:
-            k200_display += f"<span style='color:blue; font-weight:bold;'>({next_day_k200_change_rate:+.2f}%)</span>"
+        # KOSPI200 지수 및 상승률을 하나의 셀로 결합 (HTML 포함)
+        k200_display = f"{next_day_k200_index:,.2f} " # 지수 표시
+        if next_day_k200_change_rate is not None and not pd.isna(next_day_k200_change_rate):
+            if next_day_k200_change_rate > 0:
+                k200_display += f"<span style='color:red; font-weight:bold;'>({next_day_k200_change_rate:+.2f}%)</span>"
+            elif next_day_k200_change_rate < 0:
+                k200_display += f"<span style='color:blue; font-weight:bold;'>({next_day_k200_change_rate:+.2f}%)</span>"
+            else:
+                k200_display += f"({next_day_k200_change_rate:+.2f}%)"
         else:
-            k200_display += f"({next_day_k200_change_rate:+.2f}%)"
+            k200_display += "(N/A)"
+
 
         table_data.append({
             '날짜(D-Day 기준일)': date,
@@ -310,27 +325,41 @@ def create_comparison_table_k200(df):
     table_df = pd.DataFrame(table_data).sort_values('날짜(D-Day 기준일)', ascending=False)
     
     # 스타일 적용 함수
-    def style_numbers_k200(val, col_name):
+    def style_futures_column(val):
         if pd.isna(val):
             return ''
         if isinstance(val, (int, float)):
-            if col_name == '당일(D-Day) 야간선물 외국인':
-                if val > 0:
-                    return 'color: red; font-weight: bold;'
-                elif val < 0:
-                    return 'color: blue; font-weight: bold;'
+            if val > 0:
+                return 'color: red; font-weight: bold;'
+            elif val < 0:
+                return 'color: blue; font-weight: bold;'
         return ''
     
-    # 테이블 스타일 적용
-    styled_df = table_df.style.apply(
-        lambda x: [style_numbers_k200(v, k) for k, v in x.items()],
-        axis=1,
-        subset=['당일(D-Day) 야간선물 외국인'] # 이제 KOSPI200 컬럼은 HTML이므로 스타일 적용 제외
+    # DataFrame.style 객체 생성
+    styled_df = table_df.style.applymap(
+        style_futures_column, 
+        subset=['당일(D-Day) 야간선물 외국인'] # 이 컬럼에만 스타일 함수 적용
     ).format({
         '당일(D-Day) 야간선물 외국인': '{:+,.0f}'
     })
+
+    # 테이블 헤더 스타일 적용 (Pandas Styler의 set_table_styles 사용)
+    # Streamlit의 기본 .stDataFrame 스타일이 아닌 to_html로 생성된 .dataframe 스타일을 따름
+    # .dataframe th { color: black !important; font-weight: bolder !important; text-align: center !important; }
+    # 이 스타일은 이미 CSS에 정의되어 있으므로, 여기서는 특별히 추가할 필요는 없지만,
+    # 만약 인라인 스타일로 강력하게 적용하고 싶다면 아래와 같이 할 수 있음
+    # styled_df.set_table_styles([
+    #     {'selector': 'th', 'props': [('color', 'black'), ('font-weight', 'bolder'), ('text-align', 'center')]}
+    # ])
+
+    # HTML로 변환, escape=False로 HTML 태그가 렌더링되도록 함
+    # 테이블 너비를 100%로 설정
+    html_table = styled_df.to_html(escape=False, index=False)
     
-    return styled_df
+    # 생성된 HTML에 width:100% 스타일을 직접 적용 (선택 사항, CSS로 .dataframe에 width:100%를 줄 수도 있음)
+    html_table = html_table.replace('<table', '<table style="width:100%; border-collapse: collapse;"')
+    
+    return html_table
 
 
 def main():
@@ -433,8 +462,9 @@ def main():
     
     # 비교 표 (KOSPI200)
     st.markdown("### 📊 비교 표")
-    comparison_table_k200 = create_comparison_table_k200(filtered_df) # KOSPI200용 함수 호출
-    st.dataframe(comparison_table_k200, use_container_width=True, height=400)
+    # create_comparison_table_k200 함수가 이제 HTML 문자열을 반환하므로 st.write 사용
+    comparison_table_k200_html = create_comparison_table_k200(filtered_df) 
+    st.write(comparison_table_k200_html, unsafe_allow_html=True) # HTML 렌더링 허용
 
     # 같은 동향을 보일 확률 계산 (KOSPI200)
     if not filtered_df.empty:
