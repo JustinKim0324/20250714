@@ -18,7 +18,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 커스텀 CSS (테이블 헤더 스타일을 모든 DataFrame에 적용)
+# 커스텀 CSS
 st.markdown("""
 <style>
     .main-title {
@@ -43,7 +43,7 @@ st.markdown("""
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         padding: 1.5rem;
         border-radius: 10px;
-        box_shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         text-align: center;
         margin: 1rem 0;
     }
@@ -89,22 +89,18 @@ st.markdown("""
         border-radius: 0 8px 8px 0;
     }
     
-    /* 기존 stDataFrame 스타일 (st.dataframe에만 적용됨) */
-    .stDataFrame thead th {
-        color: black !important; 
-        font-weight: bolder !important; 
-        text-align: center !important;
+    /* 모든 테이블 헤더 스타일 */
+    .stDataFrame thead th, .dataframe th {
+        color: black !important; /* 글자색을 검정색으로 */
+        font-weight: bolder !important; /* 더 굵게 */
+        text-align: center !important; /* 가운데 정렬 */
     }
-    
-    /* to_html로 생성되는 테이블에 대한 스타일 추가 (k200 테이블용) */
-    .dataframe th {
-        color: black !important;
-        font-weight: bolder !important;
-        text-align: center !important;
+
+    /* st.dataframe으로 생성된 테이블의 데이터 셀 스타일 (첫 두 테이블) */
+    .stDataFrame tbody td {
+        text-align: center; /* 데이터 셀은 가운데 정렬 유지 */
     }
-    .dataframe td {
-        text-align: center; /* 데이터 셀도 가운데 정렬 */
-    }
+    /* to_html로 생성되는 테이블 (세 번째 테이블)의 데이터 셀은 pandas styler에서 직접 정렬 */
 </style>
 """, unsafe_allow_html=True)
 
@@ -292,7 +288,6 @@ def create_comparison_table_spot(df):
     
     return styled_df
 
-
 def create_comparison_table_k200(df):
     """KOSPI200 지수 상승률 비교 표 생성 및 HTML 반환"""
     table_data = []
@@ -314,17 +309,16 @@ def create_comparison_table_k200(df):
         else:
             k200_display += "(N/A)"
 
-
         table_data.append({
             '날짜(D-Day 기준일)': date,
             '당일(D-Day) 야간선물 외국인': night_futures,
-            '다음날(D+1 Day) KOSPI200 지수 및 상승률': k200_display # 새로운 결합 컬럼명
+            '다음날(D+1 Day) KOSPI200 지수': k200_display # 컬럼명 변경
         })
     
     # 최신 날짜가 가장 위에 오도록 정렬
     table_df = pd.DataFrame(table_data).sort_values('날짜(D-Day 기준일)', ascending=False)
     
-    # 스타일 적용 함수
+    # 스타일 적용 함수 (순매수/순매도 색상)
     def style_futures_column(val):
         if pd.isna(val):
             return ''
@@ -343,20 +337,16 @@ def create_comparison_table_k200(df):
         '당일(D-Day) 야간선물 외국인': '{:+,.0f}'
     })
 
-    # 테이블 헤더 스타일 적용 (Pandas Styler의 set_table_styles 사용)
-    # Streamlit의 기본 .stDataFrame 스타일이 아닌 to_html로 생성된 .dataframe 스타일을 따름
-    # .dataframe th { color: black !important; font-weight: bolder !important; text-align: center !important; }
-    # 이 스타일은 이미 CSS에 정의되어 있으므로, 여기서는 특별히 추가할 필요는 없지만,
-    # 만약 인라인 스타일로 강력하게 적용하고 싶다면 아래와 같이 할 수 있음
-    # styled_df.set_table_styles([
-    #     {'selector': 'th', 'props': [('color', 'black'), ('font-weight', 'bolder'), ('text-align', 'center')]}
-    # ])
+    # 숫자 컬럼들을 오른쪽 정렬
+    styled_df = styled_df.set_properties(
+        **{'text-align': 'right'},
+        subset=['당일(D-Day) 야간선물 외국인', '다음날(D+1 Day) KOSPI200 지수']
+    )
 
     # HTML로 변환, escape=False로 HTML 태그가 렌더링되도록 함
-    # 테이블 너비를 100%로 설정
     html_table = styled_df.to_html(escape=False, index=False)
     
-    # 생성된 HTML에 width:100% 스타일을 직접 적용 (선택 사항, CSS로 .dataframe에 width:100%를 줄 수도 있음)
+    # 생성된 HTML에 width:100% 스타일을 직접 적용
     html_table = html_table.replace('<table', '<table style="width:100%; border-collapse: collapse;"')
     
     return html_table
