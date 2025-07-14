@@ -252,6 +252,7 @@ def create_comparison_table_futures(df):
         '당일(D-Day) 야간선물 외국인': '{:+,.0f}', # 양수 부호 표시
         '다음날(D+1 Day) 정규장 외국인 선물': '{:+,.0f}' # 양수 부호 표시
     }).set_properties(
+        subset=pd.IndexSlice[:, ['날짜(D-Day 기준일)', '당일(D-Day) 야간선물 외국인', '다음날(D+1 Day) 정규장 외국인 선물']],
         **{'text-align': 'center'} # 모든 셀을 가운데 정렬
     )
     
@@ -293,6 +294,7 @@ def create_comparison_table_spot(df):
         '당일(D-Day) 야간선물 외국인': '{:+,.0f}', # 양수 부호 표시
         '다음날(D+1 Day) 정규장 외국인 현물': '{:+,.0f}' # 양수 부호 표시
     }).set_properties(
+        subset=pd.IndexSlice[:, ['날짜(D-Day 기준일)', '당일(D-Day) 야간선물 외국인', '다음날(D+1 Day) 정규장 외국인 현물']],
         **{'text-align': 'center'} # 모든 셀을 가운데 정렬
     )
     
@@ -360,6 +362,14 @@ def main():
     # 메인 제목
     st.markdown('<h1 class="main-title">📊 외국인 야간선물 동향 분석</h1>', unsafe_allow_html=True)
     
+    # 앱을 만든 이유 텍스트 추가
+    st.markdown("""
+    이 앱을 만든 이유: 올해 6월 10일부터 KRX(한국 거래소)에서 K200 야간선물 거래를 런칭하였습니다. 이제는 기존 EUREX가 아닌 KRX에서 관장하기 때문에
+    야간선물 시장에서도 투자자별 동향 데이타가 오픈이 됩니다. 야간선물 시장은 미국장이 열리는 시간대이기 때문에 미국 증시 움직임의 영향을 많이 받습니다.
+    간밤의 야간선물 시장에서의 외국인 동향이 다음날 우리 증시 정규장에서 현물과 선물에서 어떠한 동향을 보일 것인지, 주로 일치된 방향성을 보일 것인지
+    추적해보기 위하여 만들어보았습니다.
+    """)
+
     # 데이터 로드 (파일 업로드 없이 로컬에서 직접 로드)
     df = load_and_process_data()
     if df is None:
