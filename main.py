@@ -346,7 +346,7 @@ def main():
     st.markdown("---") # 섹션 구분선
 
     # 두 번째 컨텐츠: 야간선물과 다음날 정규장 현물 상관관계
-    st.markdown('<h2 class="section-title">당일 외국인 야간선물 동향과 다음날 정규장 외국인 현물 동향의 상관관계</h2>', unsafe_allow_html=True)
+    st.markdown('<h2 class="section-title">2. 당일 외국인 야간선물 동향과 다음날 정규장 외국인 현물의 상관관계</h2>', unsafe_allow_html=True)
     
     # 비교 표 (현물)
     st.markdown("### 📊 비교 표")
