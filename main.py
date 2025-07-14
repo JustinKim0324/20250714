@@ -70,7 +70,7 @@ st.markdown("""
     }
     
     .correlation-strong {
-        background: linear_gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+        background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
     }
     
     .correlation-moderate {
@@ -282,6 +282,55 @@ def create_comparison_table_spot(df):
     
     return styled_df
 
+def create_comparison_table_k200(df):
+    """KOSPI200 지수 상승률 비교 표 생성"""
+    table_data = []
+    for i in range(len(df)):
+        night_futures = df.iloc[i]['야간선물_외국인']
+        next_day_k200_index = df.iloc[i]['다음날_K200지수']
+        next_day_k200_change_rate = df.iloc[i]['K200_변화율']
+        date = df.iloc[i]['날짜'].strftime('%Y-%m-%d')
+        
+        table_data.append({
+            '날짜(D-Day 기준일)': date,
+            '당일(D-Day) 야간선물 외국인': night_futures,
+            '다음날(D+1 Day) KOSPI200 지수': next_day_k200_index,
+            '다음날(D+1 Day) KOSPI200 상승률': next_day_k200_change_rate
+        })
+    
+    # 최신 날짜가 가장 위에 오도록 정렬
+    table_df = pd.DataFrame(table_data).sort_values('날짜(D-Day 기준일)', ascending=False)
+    
+    # 스타일 적용 함수
+    def style_numbers_k200(val, col_name):
+        if pd.isna(val):
+            return ''
+        if isinstance(val, (int, float)):
+            if col_name == '당일(D-Day) 야간선물 외국인':
+                if val > 0:
+                    return 'color: red; font-weight: bold;'
+                elif val < 0:
+                    return 'color: blue; font-weight: bold;'
+            elif col_name == '다음날(D+1 Day) KOSPI200 상승률':
+                if val > 0:
+                    return 'color: red; font-weight: bold;'
+                elif val < 0:
+                    return 'color: blue; font-weight: bold;'
+        return ''
+    
+    # 테이블 스타일 적용
+    styled_df = table_df.style.apply(
+        lambda x: [style_numbers_k200(v, k) for k, v in x.items()],
+        axis=1,
+        subset=['당일(D-Day) 야간선물 외국인', '다음날(D+1 Day) KOSPI200 상승률']
+    ).format({
+        '당일(D-Day) 야간선물 외국인': '{:+,.0f}',
+        '다음날(D+1 Day) KOSPI200 지수': '{:,.2f}', # 지수는 부호 없이 소수점 2자리
+        '다음날(D+1 Day) KOSPI200 상승률': '{:+,.2f}%' # 상승률은 부호와 % 표시
+    })
+    
+    return styled_df
+
 
 def main():
     # 메인 제목
@@ -371,6 +420,39 @@ def main():
             st.markdown("") # 한 줄 띄우기
             st.markdown(f"**당일 외국인 야간선물 동향이 다음날 정규장 외국인 현물과 같은 방향성을 보일 확률은 현재의 범례 기준으로 {probability_spot:+,.2f}%입니다.**")
             st.markdown(f"(※단위는 선물은 '계약', 현물은 '억' 기준이며, 여기서 같은 방향성이란 순매수일 경우 순매수, 순매도일 경우 순매도를 의미함)")
+        else:
+            st.info("선택된 기간에 유효한 데이터가 없습니다. 확률을 계산할 수 없습니다.")
+    else:
+        st.info("선택된 기간에 유효한 데이터가 없습니다. 확률을 계산할 수 없습니다.")
+
+    st.markdown("---") # 섹션 구분선
+
+    # 세 번째 컨텐츠: 야간선물과 다음날 KOSPI200 지수 상승률 상관관계
+    st.markdown('<h2 class="section-title">3. 당일 외국인 야간선물 동향과 다음날 KOSPI200 지수 상승률의 상관관계</h2>', unsafe_allow_html=True)
+    
+    # 비교 표 (KOSPI200)
+    st.markdown("### 📊 비교 표")
+    comparison_table_k200 = create_comparison_table_k200(filtered_df) # KOSPI200용 함수 호출
+    st.dataframe(comparison_table_k200, use_container_width=True, height=400)
+
+    # 같은 동향을 보일 확률 계산 (KOSPI200)
+    if not filtered_df.empty:
+        # 순매수일 때 KOSPI200 상승 (양수)
+        same_trend_positive_k200 = ((filtered_df['야간선물_외국인'] > 0) & 
+                               (filtered_df['K200_변화율'] > 0)).sum()
+        
+        # 순매도일 때 KOSPI200 하락 (음수)
+        same_trend_negative_k200 = ((filtered_df['야간선물_외국인'] < 0) & 
+                               (filtered_df['K200_변화율'] < 0)).sum()
+        
+        total_same_trend_k200 = same_trend_positive_k200 + same_trend_negative_k200
+        total_rows = len(filtered_df)
+
+        if total_rows > 0:
+            probability_k200 = (total_same_trend_k200 / total_rows) * 100
+            st.markdown("") # 한 줄 띄우기
+            st.markdown(f"**당일 외국인 야간선물 동향이 다음날 KOSPI200 지수 상승률과 같은 방향성을 보일 확률은 현재의 범례 기준으로 {probability_k200:+,.2f}%입니다.**")
+            st.markdown(f"(※단위는 선물은 '계약', KOSPI200 지수 상승률은 '%' 기준이며, 여기서 같은 방향성이란 순매수일 경우 상승, 순매도일 경우 하락을 의미함)")
         else:
             st.info("선택된 기간에 유효한 데이터가 없습니다. 확률을 계산할 수 없습니다.")
     else:
